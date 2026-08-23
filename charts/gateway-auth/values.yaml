@@ -69,14 +69,20 @@ exposure:
     # OIDCApp spec.name (the Zitadel app display name). Empty → {name}-{cluster}.
     appName: ""
 
-  # Routes on the exposure host. One HTTPRoute per entry; protected entries
-  # also get an extAuth SecurityPolicy. Unlisted paths (eudi wallet/issuer/
-  # Hydra) get NO SecurityPolicy — anonymous by construction. Each entry:
-  #   name        HTTPRoute/SecurityPolicy suffix (DNS label)
-  #   path        match value (default "/")
-  #   pathType    PathPrefix | Exact (default PathPrefix)
-  #   protected   render a SecurityPolicy (bool)
-  #   backend     optional {name, port} override of exposure.backend
+  # Routes on the exposure host. protected entries get an extAuth
+  # SecurityPolicy. Unlisted paths (eudi wallet/issuer/Hydra) get NO
+  # SecurityPolicy — anonymous by construction. Each entry:
+  #   name             HTTPRoute/SecurityPolicy suffix (DNS label)
+  #   path             match value (default "/")
+  #   pathType         PathPrefix | Exact (default PathPrefix)
+  #   protected        render a SecurityPolicy (bool)
+  #   backend          optional {name, port} override of exposure.backend
+  #   targetRouteName  ATTACH MODE — bind the SecurityPolicy to this EXISTING
+  #                    HTTPRoute (owned elsewhere, e.g. a ring3 app chart)
+  #                    instead of creating one here. When set, this chart
+  #                    renders NO app HTTPRoute/backend for the entry (only
+  #                    the SecurityPolicy); backend/path/pathType are ignored.
+  #                    The {proxyPrefix} proxy route stays chart-owned.
   routes:
     - name: app
       path: /

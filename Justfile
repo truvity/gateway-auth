@@ -58,10 +58,10 @@ chart-lint:
         --set exposure.passAuthorizationHeader=true \
         --set exposure.routes[0].name=app \
         --set exposure.routes[0].protected=true \
+        --set exposure.routes[0].authenticatedOnly=true \
         --set exposure.routes[0].targetRouteName=url-shortener \
         --set exposure.proxy.image.repository=quay.io/oauth2-proxy/oauth2-proxy \
-        --set exposure.proxy.image.tag=v7.6.0 \
-        --set 'exposure.authorization.groups={cluster-x:cluster:admin}' >/dev/null
+        --set exposure.proxy.image.tag=v7.6.0 >/dev/null
 
 # Type-check, test and build the TS package.
 ts:

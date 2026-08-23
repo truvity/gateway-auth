@@ -4,6 +4,7 @@
     "golangci-lint@latest",
     "gopls@latest",
     "govulncheck@latest",
+    "goreleaser@latest",
     "just@latest",
     "kubernetes-helm@latest",
     "nodejs@latest"

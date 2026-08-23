@@ -58,6 +58,7 @@
               "path": { "type": "string" },
               "pathType": { "type": "string", "enum": ["PathPrefix", "Exact"] },
               "protected": { "type": "boolean" },
+              "targetRouteName": { "type": "string" },
               "backend": {
                 "type": "object",
                 "additionalProperties": false,

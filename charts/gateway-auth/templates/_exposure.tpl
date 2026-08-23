@@ -409,11 +409,20 @@ spec:
           weight: 1
 {{- range $route := $routes }}
 {{- $rname := required "each exposure.routes entry needs a name" $route.name }}
+{{- /* Attach mode: when targetRouteName is set, the SecurityPolicy is bound to
+   an EXISTING HTTPRoute (owned elsewhere — e.g. a ring3 app chart), and this
+   chart creates NO app route or backend. Without it, the chart owns the app
+   route (the platform-tier shape). The proxy {proxyPrefix} route is always
+   chart-owned regardless. */}}
+{{- $targetRoute := $route.targetRouteName | default "" }}
+{{- $attach := ne $targetRoute "" }}
+{{- $secTarget := ternary $targetRoute (printf "%s-%s" $name $rname) $attach }}
+{{- if not $attach }}
 {{- $rpath := $route.path | default "/" }}
 {{- $rpathType := $route.pathType | default "PathPrefix" }}
 {{- $backend := $route.backend | default $e.backend }}
 {{- if not $backend }}
-{{- fail (printf "route %q has no backend and exposure.backend is unset" $rname) }}
+{{- fail (printf "route %q has no backend and exposure.backend is unset (set exposure.routes[].targetRouteName to attach the SecurityPolicy to an existing route instead of creating one)" $rname) }}
 {{- end }}
 ---
 # Application route {{ $rname }} ({{ $rpath }}) → backend Service
@@ -454,14 +463,16 @@ spec:
           name: {{ required "route backend needs a name" $backend.name }}
           port: {{ required "route backend needs a port" $backend.port }}
           weight: 1
+{{- end }}
 {{- if $route.protected }}
 ---
-# extAuth + jwt authorization on route {{ $rname }}. oauth2-proxy runs the
-# OIDC code flow and holds the tokens in Valkey; Envoy calls it as HTTP
-# ext_authz. It returns 200 with X-Auth-Request-Access-Token, which the jwt
-# provider below re-validates against Zitadel's JWKS. The shared EnvoyProxy
-# filterOrder puts ext_authz before jwt_authn so the header exists by the
-# time jwt_authn runs (INF-562 / INF-421).
+# extAuth + jwt authorization on route {{ $rname }}
+{{- if $attach }} (attached to the existing HTTPRoute {{ $secTarget }}){{ end }}.
+# oauth2-proxy runs the OIDC code flow and holds the tokens in Valkey; Envoy
+# calls it as HTTP ext_authz. It returns 200 with X-Auth-Request-Access-Token,
+# which the jwt provider below re-validates against Zitadel's JWKS. The shared
+# EnvoyProxy filterOrder puts ext_authz before jwt_authn so the header exists
+# by the time jwt_authn runs (INF-562 / INF-421).
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -474,7 +485,7 @@ spec:
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
-      name: {{ $name }}-{{ $rname }}
+      name: {{ $secTarget }}
   extAuth:
     # HTTP ext_authz forwards ONLY these client headers to the auth service
     # (unlike gRPC, which forwards all). Without `cookie`, oauth2-proxy never

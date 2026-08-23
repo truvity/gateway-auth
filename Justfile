@@ -44,6 +44,24 @@ chart-lint:
         --set exposure.proxy.image.tag=v7.6.0 \
         --set 'exposure.authorization.groups={cluster-x:cluster:admin}' \
         --set exposure.networkPolicy.enabled=true >/dev/null
+    # Attach mode (business app): SecurityPolicy binds to an EXISTING ring3
+    # HTTPRoute (targetRouteName), product projectRef, no chart-owned app route.
+    helm template gateway-auth charts/gateway-auth \
+        --set exposure.enabled=true \
+        --set exposure.hostname=us.example.com \
+        --set exposure.issuer=https://sso.example.com \
+        --set exposure.gateway.name=tenants \
+        --set exposure.gateway.namespace=envoy-gateway-system \
+        --set exposure.gateway.sectionName=tenants \
+        --set exposure.identity.project.cluster=false \
+        --set exposure.identity.project.ref=url-shortener \
+        --set exposure.passAuthorizationHeader=true \
+        --set exposure.routes[0].name=app \
+        --set exposure.routes[0].protected=true \
+        --set exposure.routes[0].targetRouteName=url-shortener \
+        --set exposure.proxy.image.repository=quay.io/oauth2-proxy/oauth2-proxy \
+        --set exposure.proxy.image.tag=v7.6.0 \
+        --set 'exposure.authorization.groups={cluster-x:cluster:admin}' >/dev/null
 
 # Type-check, test and build the TS package.
 ts:

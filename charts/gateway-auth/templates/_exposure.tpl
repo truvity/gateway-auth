@@ -97,8 +97,8 @@ redis_cluster_connection_urls = ["redis://{{ include "gateway-auth.valkeyHost" .
    empty `values:` list (defaultAction Deny + zero Allow = nobody, which
    the CRD rejects and which is never intended). */ -}}
 {{- range $route := $routes -}}
-{{- if and $route.protected (not $e.authorization.groups) -}}
-{{- fail (printf "exposure.authorization.groups must be non-empty: route %q is protected" $route.name) -}}
+{{- if and $route.protected (not $route.authenticatedOnly) (not $e.authorization.groups) -}}
+{{- fail (printf "exposure.authorization.groups must be non-empty: route %q is protected (or set the route authenticatedOnly: true for the ext_authz-only, app-authorizes posture)" $route.name) -}}
 {{- end -}}
 {{- end -}}
 # ==========================================================================
@@ -514,6 +514,13 @@ spec:
         - x-auth-request-user
         - x-auth-request-email
         - x-auth-request-groups
+{{- if $route.authenticatedOnly }}
+  # authenticatedOnly: ext_authz (oauth2-proxy) is the whole gate — any org
+  # user who completed the OIDC login passes, and the token is still forwarded
+  # to the backend (headersToBackend above) for the app to authorize itself.
+  # No jwt/groups block: this is the business-app posture (the app gates its
+  # own actions), the same as the Envoy `oidc`-only exposure it replaces.
+{{- else }}
   # Authorization (INF-421): "authenticated" is never sufficient — any org
   # user passes ext_authz above. The jwt provider re-validates the access
   # token against Zitadel's JWKS, and the rules require a group in the
@@ -547,6 +554,7 @@ spec:
                   {{- range (required "exposure.authorization.groups must be set for a protected route" $e.authorization.groups) }}
                   - {{ . | quote }}
                   {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- if $e.networkPolicy.enabled }}

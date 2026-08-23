@@ -76,6 +76,11 @@ exposure:
   #   path             match value (default "/")
   #   pathType         PathPrefix | Exact (default PathPrefix)
   #   protected        render a SecurityPolicy (bool)
+  #   authenticatedOnly  ext_authz is the whole gate — any org user who logs
+  #                    in passes, the token is still forwarded, and NO
+  #                    jwt/groups block is emitted (the app authorizes itself;
+  #                    the business-app posture). authorization.groups is then
+  #                    not required for the route.
   #   backend          optional {name, port} override of exposure.backend
   #   targetRouteName  ATTACH MODE — bind the SecurityPolicy to this EXISTING
   #                    HTTPRoute (owned elsewhere, e.g. a ring3 app chart)

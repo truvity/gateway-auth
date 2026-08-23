@@ -270,44 +270,6 @@
         }
       }
     },
-    "lefthook@latest": {
-      "last_modified": "2026-08-12T11:28:58Z",
-      "resolved": "github:NixOS/nixpkgs/044bfe75bfe4c7bbe043dc17b5e42ea823b84a09#lefthook",
-      "source": "devbox-search",
-      "version": "2.1.10",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/qbrq4nvlrd7k78iadpph7pwa4ra0z0sl-lefthook-2.1.10",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/qbrq4nvlrd7k78iadpph7pwa4ra0z0sl-lefthook-2.1.10"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/wd9rvnrd5i46ia4v42wh8kfnnfd3v9lr-lefthook-2.1.10",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/wd9rvnrd5i46ia4v42wh8kfnnfd3v9lr-lefthook-2.1.10"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/w3kgp8s9wm3b3yg484hvb318mdnznxvl-lefthook-2.1.10",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/w3kgp8s9wm3b3yg484hvb318mdnznxvl-lefthook-2.1.10"
-        }
-      }
-    },
     "nodejs@latest": {
       "last_modified": "2026-08-14T06:48:10Z",
       "plugin_version": "0.0.4",

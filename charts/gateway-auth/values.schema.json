@@ -1,0 +1,150 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "gateway-auth values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "clusterName": { "type": "string" },
+    "commonAnnotations": { "type": "object" },
+    "podAnnotations": { "type": "object" },
+    "exposure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "name": { "type": "string" },
+        "hostname": { "type": "string" },
+        "issuer": { "type": "string" },
+        "proxyPrefix": { "type": "string" },
+        "dnsDomain": { "type": "string" },
+        "cookieDomains": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "passAuthorizationHeader": { "type": "boolean" },
+        "gateway": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "namespace": { "type": "string" },
+            "sectionName": { "type": "string" }
+          }
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "project": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cluster": { "type": "boolean" },
+                "ref": { "type": "string" }
+              }
+            },
+            "projectId": { "type": "string" },
+            "appName": { "type": "string" }
+          }
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "path": { "type": "string" },
+              "pathType": { "type": "string", "enum": ["PathPrefix", "Exact"] },
+              "protected": { "type": "boolean" },
+              "backend": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" },
+                  "port": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "authorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "groups": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "backend": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "port": { "type": "integer" }
+          }
+        },
+        "proxy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "repository": { "type": "string" },
+                "tag": { "type": "string" }
+              }
+            },
+            "replicas": { "type": "integer", "minimum": 1 },
+            "resources": { "type": "object" },
+            "nodeSelector": { "type": "object" },
+            "tolerations": { "type": "array" },
+            "topologySpreadConstraints": { "type": "array" }
+          }
+        },
+        "valkey": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "shards": { "type": "integer", "minimum": 1 },
+            "replicas": { "type": "integer", "minimum": 0 },
+            "image": { "type": "string" },
+            "persistence": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "size": { "type": "string" },
+                "storageClassName": { "type": "string" },
+                "reclaimPolicy": { "type": "string" }
+              }
+            },
+            "resources": { "type": "object" },
+            "config": { "type": "object" },
+            "users": { "type": "array" },
+            "exporter": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "networkPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "port": { "type": "integer" },
+            "fleetNamespace": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

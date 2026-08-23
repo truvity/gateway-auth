@@ -1,0 +1,14 @@
+# Go
+/bin/
+*.out
+
+# devbox
+.devbox/
+
+# Node / TS
+ts/node_modules/
+ts/dist/
+*.tsbuildinfo
+
+# editor / OS
+.DS_Store

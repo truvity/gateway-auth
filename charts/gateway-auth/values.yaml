@@ -1,0 +1,133 @@
+# gateway-auth — browser-auth exposure for a UI in the "oauth2-proxy shape"
+# (INF-562). One oauth2-proxy per OIDC client, per-install Valkey sessions,
+# and — per protected route — an Envoy extAuth SecurityPolicy, so no app
+# hand-rolls its own SecurityPolicy. See README.md for the two usage modes.
+
+# Cluster the exposure lands on (used in the default OIDCApp spec.name).
+clusterName: devel
+
+# Extra annotations merged into every resource (alongside the ArgoCD
+# sync-wave ordering annotations this chart sets itself).
+commonAnnotations: {}
+
+# Extra annotations for the oauth2-proxy pod template.
+podAnnotations: {}
+
+exposure:
+  # Master switch. Nothing renders unless this is true.
+  enabled: false
+
+  # Base name every resource derives from (OIDCApp, ValkeyCluster, cookie
+  # Secret, oauth2-proxy workload, HTTPRoutes, SecurityPolicies). Must be
+  # unique per install in the namespace — one oauth2-proxy per OIDC client.
+  # Defaults to the release name.
+  name: ""
+
+  # The public hostname the OIDCApp redirect URIs are minted for and every
+  # HTTPRoute matches. REQUIRED when enabled.
+  hostname: ""
+
+  # OIDC issuer (Zitadel instance). REQUIRED when enabled.
+  # e.g. https://auth.truvity.xyz
+  issuer: ""
+
+  # Path prefix the proxy owns (sign_in, start, callback, sign-out). The
+  # HTTPRoute to the proxy and the OIDCApp redirectUri use it. eudi-style
+  # shared-host installs override to e.g. "/_gwauth".
+  proxyPrefix: "/oauth2"
+
+  # Cluster DNS suffix used to build the Valkey service FQDN.
+  dnsDomain: cluster.local
+
+  # Cookie/redirect domain allow-list for oauth2-proxy. Empty → the single
+  # exposure host. Set to a leading-dot parent (".devel.truvity.xyz") to
+  # share one session cookie across subdomains.
+  cookieDomains: []
+
+  # When true the proxy also forwards the token in the standard
+  # Authorization: Bearer header (url-shortener /api/me needs it in addition
+  # to X-Auth-Request-Access-Token).
+  passAuthorizationHeader: false
+
+  # Parent Gateway/listener the HTTPRoutes attach to. REQUIRED when enabled.
+  gateway:
+    name: ""
+    namespace: ""
+    sectionName: ""
+
+  # Zitadel identity. project selects HOW the OIDCApp binds to a project:
+  #   project.cluster: true  → projectId (shared cluster-{env} project, the
+  #                            gateways-stack shape). Set identity.projectId.
+  #   project.cluster: false → projectRef.name = project.ref (an install's
+  #                            own product Project CR, the url-shortener /
+  #                            eudi shape).
+  identity:
+    project:
+      cluster: true
+      ref: ""
+    projectId: ""
+    # OIDCApp spec.name (the Zitadel app display name). Empty → {name}-{cluster}.
+    appName: ""
+
+  # Routes on the exposure host. One HTTPRoute per entry; protected entries
+  # also get an extAuth SecurityPolicy. Unlisted paths (eudi wallet/issuer/
+  # Hydra) get NO SecurityPolicy — anonymous by construction. Each entry:
+  #   name        HTTPRoute/SecurityPolicy suffix (DNS label)
+  #   path        match value (default "/")
+  #   pathType    PathPrefix | Exact (default PathPrefix)
+  #   protected   render a SecurityPolicy (bool)
+  #   backend     optional {name, port} override of exposure.backend
+  routes:
+    - name: app
+      path: /
+      protected: true
+
+  # jwt groups allow-list values for protected routes (defaultAction Deny).
+  authorization:
+    groups: []
+
+  # Default app Service protected routes forward to (overridable per route).
+  backend:
+    name: ""
+    port: 80
+
+  # oauth2-proxy workload.
+  proxy:
+    image:
+      # Override to the cluster's ECR mirror in gitops, e.g.
+      # <acct>.dkr.ecr.<region>.amazonaws.com/quay/oauth2-proxy/oauth2-proxy
+      repository: quay.io/oauth2-proxy/oauth2-proxy
+      tag: v7.6.0
+    replicas: 2
+    # Empty → requests cpu 25m/memory 64Mi, limits memory 128Mi.
+    resources: {}
+    # Scheduling passthroughs (empty by default; the gateways-stack pins
+    # arm64 — set these to reproduce that).
+    nodeSelector: {}
+    tolerations: []
+    topologySpreadConstraints: []
+
+  # Per-install session store. The valkey.io operator owns the pods and the
+  # headless Service valkey-{name}-sessions:6379 — this chart makes no
+  # Service/Secret of its own.
+  valkey:
+    shards: 1
+    replicas: 0
+    image: ""
+    persistence:
+      enabled: false
+      size: 1Gi
+      storageClassName: ""
+      reclaimPolicy: Delete
+    resources: {}
+    config: {}
+    users: []
+    exporter:
+      enabled: false
+
+  # Ingress-from-fleet NetworkPolicy: admit the shared Envoy data-plane to
+  # the proxy's ext_authz port.
+  networkPolicy:
+    enabled: true
+    port: 4180
+    fleetNamespace: envoy-gateway-system

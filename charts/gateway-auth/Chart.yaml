@@ -1,0 +1,21 @@
+apiVersion: v2
+name: gateway-auth
+description: >-
+  Browser-auth exposure for a UI in the "oauth2-proxy shape" (INF-562): one
+  oauth2-proxy per OIDC client with per-install Valkey session storage, its
+  OIDCApp + ESO cookie secret, the /{proxyPrefix} HTTPRoute to the proxy,
+  and — per protected route — an Envoy extAuth SecurityPolicy (ext_authz to
+  oauth2-proxy + jwt groups authorization). Emits the shape so no app has to
+  hand-roll an Envoy SecurityPolicy. Usable two ways: as a NORMAL
+  application chart rendered from its own values.yaml (templates/
+  exposure.yaml), and as a LIBRARY — add it as a dependency and
+  `{{ include "gateway-auth.exposure" . }}` from your own values. See README.md.
+# NOTE: type is `application`, NOT `library`. A library chart renders no
+# templates of its own, which would defeat the standalone/app-chart usage
+# (gitops renders hubble/gemaal/the shared platform proxy through this
+# chart directly). The reusable named templates in templates/_exposure.tpl
+# are `include`-able by consumer charts regardless of this type — that is
+# what makes the chart double as a library.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

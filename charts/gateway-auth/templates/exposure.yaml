@@ -1,0 +1,5 @@
+{{- /* Standalone / app-chart entrypoint: render the reusable exposure
+   template from THIS chart's own values. Consumer charts that add
+   gateway-auth as a dependency skip this file and `include
+   "gateway-auth.exposure" .` from their own templates instead (see README). */ -}}
+{{- include "gateway-auth.exposure" . }}

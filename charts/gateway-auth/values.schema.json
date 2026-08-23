@@ -4,6 +4,7 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "global": { "type": "object" },
     "clusterName": { "type": "string" },
     "commonAnnotations": { "type": "object" },
     "podAnnotations": { "type": "object" },

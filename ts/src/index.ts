@@ -42,6 +42,8 @@ export {
 
 export { type ProfileOptions, oauth2ProxyOIDC } from "./profile.js";
 
+export { signOutUrl } from "./signout.js";
+
 export {
   type RequestLike,
   type ResponseLike,

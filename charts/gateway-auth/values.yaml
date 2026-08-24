@@ -142,3 +142,9 @@ exposure:
     enabled: true
     port: 4180
     fleetNamespace: envoy-gateway-system
+    # Namespace the valkey-operator runs in. A second NetworkPolicy admits it
+    # to the session ValkeyCluster pods on 6379/16379 so it can form the shard
+    # and mark the cluster Ready — REQUIRED in a business-app namespace whose
+    # default-deny tenant baseline admits only cnpg/envoy/tailscale
+    # cross-namespace (platform namespaces lack that baseline).
+    valkeyOperatorNamespace: valkey-operator-system

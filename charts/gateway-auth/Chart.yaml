@@ -17,5 +17,5 @@ description: >-
 # are `include`-able by consumer charts regardless of this type — that is
 # what makes the chart double as a library.
 type: application
-version: 0.3.1
-appVersion: "0.3.1"
+version: 0.4.0
+appVersion: "0.4.0"

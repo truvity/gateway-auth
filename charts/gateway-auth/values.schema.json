@@ -144,7 +144,8 @@
           "properties": {
             "enabled": { "type": "boolean" },
             "port": { "type": "integer" },
-            "fleetNamespace": { "type": "string" }
+            "fleetNamespace": { "type": "string" },
+            "valkeyOperatorNamespace": { "type": "string" }
           }
         }
       }

@@ -590,6 +590,39 @@ spec:
       ports:
         - port: {{ int ($e.networkPolicy.port | default 4180) }}
           protocol: TCP
+---
+# Operator-ingress NetworkPolicy: admit the valkey-operator to THIS install's
+# session ValkeyCluster pods so it can form the shard (CLUSTER MEET / slot
+# assignment) and mark the cluster Ready. A business-app namespace runs a
+# default-deny tenant baseline that admits only cnpg/envoy/tailscale
+# cross-namespace, so WITHOUT this the operator's dial to :6379 times out, the
+# cluster is stuck MissingShards, and the proxy never gets a session store.
+# Platform namespaces (kube-system/gemaal-system) lack that baseline, which is
+# why the gap was invisible until the business tier. 16379 is the cluster bus.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "gateway-auth.valkeyName" $root }}-operator
+  annotations:
+    {{- include "gateway-auth.resourceAnnotations" (dict "root" $root "wave" "0") | nindent 4 }}
+  labels:
+    {{- include "gateway-auth.labels" $root | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      valkey.io/cluster: {{ include "gateway-auth.valkeyName" $root }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $e.networkPolicy.valkeyOperatorNamespace | default "valkey-operator-system" }}
+      ports:
+        - port: 6379
+          protocol: TCP
+        - port: 16379
+          protocol: TCP
 {{- end }}
 {{- end -}}
 {{- end -}}

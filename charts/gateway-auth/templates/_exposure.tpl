@@ -591,14 +591,20 @@ spec:
         - port: {{ int ($e.networkPolicy.port | default 4180) }}
           protocol: TCP
 ---
-# Operator-ingress NetworkPolicy: admit the valkey-operator to THIS install's
-# session ValkeyCluster pods so it can form the shard (CLUSTER MEET / slot
-# assignment) and mark the cluster Ready. A business-app namespace runs a
-# default-deny tenant baseline that admits only cnpg/envoy/tailscale
-# cross-namespace, so WITHOUT this the operator's dial to :6379 times out, the
-# cluster is stuck MissingShards, and the proxy never gets a session store.
-# Platform namespaces (kube-system/gemaal-system) lack that baseline, which is
-# why the gap was invisible until the business tier. 16379 is the cluster bus.
+# Valkey session-store ingress NetworkPolicy. Two admitted clients, because
+# defining ANY Ingress rule flips these pods to default-deny for every other
+# source:
+#   1. the valkey-operator, so it can form the shard (CLUSTER MEET / slot
+#      assignment on 6379 + the 16379 cluster bus) and mark the cluster Ready;
+#   2. THIS install's own oauth2-proxy, which holds its OIDC sessions here
+#      (redis://…:6379) — without it the proxy's dial times out, it crashloops
+#      on "unable to set a redis initialization key", and ext_authz has no
+#      healthy upstream (Envoy returns "remote connection failure" / 403).
+# A business-app namespace runs a default-deny tenant baseline that admits only
+# cnpg/envoy/tailscale cross-namespace; platform namespaces
+# (kube-system/gemaal-system/identity-system) lack that baseline, so before
+# rule 1 existed the operator gap was invisible there — and rule 2 was missing
+# entirely until a proxy restart made the block bite.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -622,6 +628,13 @@ spec:
         - port: 6379
           protocol: TCP
         - port: 16379
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "gateway-auth.proxySelectorLabels" $root | nindent 14 }}
+      ports:
+        - port: 6379
           protocol: TCP
 {{- end }}
 {{- end -}}

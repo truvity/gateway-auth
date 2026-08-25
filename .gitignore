@@ -7,7 +7,7 @@
 
 # Node / TS
 ts/node_modules/
-ts/dist/
+# ts/dist is COMMITTED: consumers install straight from git (npm install github:truvity/gateway-auth#vX) and lifecycle scripts may be disabled on their machines — the same committed-artifact pattern as the roster's frontend/dist.
 *.tsbuildinfo
 
 # editor / OS

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/lestrrat-go/jwx/v4/jwt"
 )
@@ -18,6 +19,9 @@ type verifier struct {
 	issuer   string
 	audience string
 	userinfo *userinfoFetcher // nil disables the display-claim fallback
+	// displayCookie names the gateway's ID-token cookie; "" disables the
+	// cookie-borne display-claim fallback.
+	displayCookie string
 }
 
 func (v *verifier) Enabled() bool { return true }
@@ -40,14 +44,63 @@ func (v *verifier) Authenticate(ctx context.Context, h Headers) (Identity, error
 
 	identity := v.mapper.identity(token, raw)
 
-	// Zitadel asserts profile claims into the ID token, not the access token,
-	// so an access-token-only identity can lack name/email. Ask userinfo with
-	// the token that already proved itself. Failures only degrade display.
+	// Zitadel asserts profile claims into the ID token, not the access
+	// token, so an access-token-only identity can lack name/email. Two
+	// fallbacks, cheapest first: the gateway's ID-token cookie (verified,
+	// same subject), then userinfo with the token that already proved
+	// itself. Failures only degrade display.
+	if identity.Name == "" && identity.Email == "" {
+		v.fillFromDisplayCookie(ctx, h, &identity)
+	}
+
 	if v.userinfo != nil && identity.Name == "" && identity.Email == "" {
 		v.userinfo.fill(ctx, raw, &identity)
 	}
 
 	return identity, nil
+}
+
+// fillFromDisplayCookie reads name/email from the gateway's ID-token cookie
+// (Envoy Gateway's OIDC filter stores one as "IdToken"). The cookie is
+// VERIFIED against the same key set and must carry the same subject as the
+// access token — display data still only enters through a proven token. A
+// browser drops cookies past ~4 KiB, so an ID token fat with role assertions
+// may simply be absent; that is what the userinfo fallback is for.
+func (v *verifier) fillFromDisplayCookie(ctx context.Context, h Headers, identity *Identity) {
+	if v.displayCookie == "" {
+		return
+	}
+
+	raw := cookieValue(h.Get("Cookie"), v.displayCookie)
+	if raw == "" {
+		return
+	}
+
+	token, err := v.parse(raw)
+	if err != nil {
+		v.logger.DebugContext(ctx, "id token cookie rejected", slog.Any("error", err))
+
+		return
+	}
+
+	if subject, _ := token.Subject(); subject != identity.Subject {
+		return
+	}
+
+	identity.Name = stringClaim(token, "name")
+	identity.Email = stringClaim(token, "email")
+}
+
+// cookieValue extracts one cookie from a Cookie header, "" when absent.
+func cookieValue(header, name string) string {
+	for _, part := range strings.Split(header, ";") {
+		k, val, ok := strings.Cut(strings.TrimSpace(part), "=")
+		if ok && k == name {
+			return val
+		}
+	}
+
+	return ""
 }
 
 // parse validates the token's signature, issuer, audience and expiry.

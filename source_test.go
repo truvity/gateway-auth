@@ -209,3 +209,33 @@ func TestSplitAndTrim(t *testing.T) {
 		})
 	}
 }
+
+func TestForwardAuthorization(t *testing.T) {
+	h := fakeHeaders{"Authorization": "Bearer direct"}
+	if got := ForwardAuthorization(h); got != "Bearer direct" {
+		t.Fatalf("Authorization must win verbatim, got %q", got)
+	}
+
+	h = fakeHeaders{"X-Auth-Request-Access-Token": "gw-token"}
+	if got := ForwardAuthorization(h); got != "Bearer gw-token" {
+		t.Fatalf("gateway token must gain the Bearer scheme, got %q", got)
+	}
+
+	if got := ForwardAuthorization(fakeHeaders{}); got != "" {
+		t.Fatalf("no credential must forward nothing, got %q", got)
+	}
+}
+
+func TestHeaderGetterAdapts(t *testing.T) {
+	g := HeaderGetter(func(name string) string {
+		if name == "Authorization" {
+			return "Bearer x"
+		}
+
+		return ""
+	})
+
+	if got := ForwardAuthorization(g); got != "Bearer x" {
+		t.Fatalf("HeaderGetter adaption failed, got %q", got)
+	}
+}

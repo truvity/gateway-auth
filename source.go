@@ -100,3 +100,29 @@ func splitAndTrim(s, sep string) []string {
 
 	return out
 }
+
+// ForwardAuthorization renders the caller's credential as an Authorization
+// header value for a downstream call made ON BEHALF of the caller (a console
+// forwarding the operator's token to its broker, say). It prefers a verbatim
+// Authorization header and falls back to the gateway's forwarded access token
+// (adding the Bearer scheme oauth2-proxy strips). Empty when the request
+// carries no credential — the downstream service then refuses it, which is
+// the honest outcome.
+func ForwardAuthorization(h Headers) string {
+	if a := strings.TrimSpace(h.Get(HeaderAuthorization)); a != "" {
+		return a
+	}
+
+	if t := strings.TrimSpace(h.Get(HeaderAccessToken)); t != "" {
+		return "Bearer " + t
+	}
+
+	return ""
+}
+
+// HeaderGetter adapts a plain header-lookup function (http.Header.Get,
+// connect req.Header().Get) to the Headers interface.
+type HeaderGetter func(name string) string
+
+// Get satisfies Headers.
+func (g HeaderGetter) Get(name string) string { return g(name) }

@@ -1,0 +1,21 @@
+{
+  "name": "@truvity/gateway-auth",
+  "version": "0.5.0",
+  "description": "Gateway-auth batteries for the fleet's web apps: verified Identity (server), signOutUrl + UserBadge header (browser/React). Install from git: npm install github:truvity/gateway-auth#semver.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "main": "./ts/dist/index.js",
+  "types": "./ts/dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./ts/dist/index.d.ts", "import": "./ts/dist/index.js" },
+    "./react": { "types": "./ts/dist/react/index.d.ts", "import": "./ts/dist/react/index.js" }
+  },
+  "files": ["ts/dist"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "prepare": "cd ts && npm install --legacy-peer-deps --no-audit --no-fund && npm run build"
+  },
+  "dependencies": { "jose": "^5.9.6" },
+  "peerDependencies": { "react": ">=18", "@mui/material": ">=6" },
+  "peerDependenciesMeta": { "react": { "optional": true }, "@mui/material": { "optional": true } }
+}

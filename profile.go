@@ -23,6 +23,14 @@ type Config struct {
 	// UserinfoFallback fills Name/Email from the userinfo endpoint when the
 	// access token carries neither. Off by default.
 	UserinfoFallback bool
+	// DisplayCookie names a cookie holding the caller's ID token (Envoy
+	// Gateway's OIDC filter stores it as "IdToken"). When set and the access
+	// token carries neither name nor email, the verifier reads them from
+	// this cookie — verified against the same keys and required to be the
+	// SAME SUBJECT — before falling back to userinfo. Cheaper than a
+	// userinfo round-trip, and it works when the userinfo endpoint is
+	// unreachable. Empty disables it.
+	DisplayCookie string
 	// Logger; nil uses slog.Default().
 	Logger *slog.Logger
 }
@@ -56,12 +64,13 @@ func NewVerifier(ctx context.Context, cfg Config) (Authenticator, error) {
 	}
 
 	v := &verifier{
-		logger:   logger,
-		keys:     keys,
-		source:   source,
-		mapper:   cfg.Claims,
-		issuer:   cfg.Issuer,
-		audience: cfg.Audience,
+		logger:        logger,
+		keys:          keys,
+		source:        source,
+		mapper:        cfg.Claims,
+		issuer:        cfg.Issuer,
+		audience:      cfg.Audience,
+		displayCookie: cfg.DisplayCookie,
 	}
 
 	if cfg.UserinfoFallback && found.UserinfoURI != "" {

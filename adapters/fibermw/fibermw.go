@@ -23,10 +23,20 @@ func Require(auth gatewayauth.Authenticator) fiber.Handler {
 			return statusFor(err)
 		}
 
-		c.Locals(gatewayauth.ContextKey{}, identity)
+		attach(c, identity)
 
 		return c.Next()
 	}
+}
+
+// attach parks the identity where BOTH kinds of handler find it: fiber
+// Locals for fiber handlers, and the fasthttp request context's user values
+// for net/http handlers adapted into fiber (a ConnectRPC service behind the
+// fiber adaptor reads it with gatewayauth.FromContext) — fiber Locals do not
+// cross that boundary on their own.
+func attach(c fiber.Ctx, identity gatewayauth.Identity) {
+	c.Locals(gatewayauth.ContextKey{}, identity)
+	c.RequestCtx().SetUserValue(gatewayauth.ContextKey{}, identity)
 }
 
 // Optional attaches an Identity when one is present and valid, and otherwise
@@ -35,7 +45,7 @@ func Require(auth gatewayauth.Authenticator) fiber.Handler {
 func Optional(auth gatewayauth.Authenticator) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		if identity, err := auth.Authenticate(c.Context(), fiberHeaders{c}); err == nil {
-			c.Locals(gatewayauth.ContextKey{}, identity)
+			attach(c, identity)
 		}
 
 		return c.Next()
@@ -56,7 +66,7 @@ func RequireRoles(auth gatewayauth.Authenticator, roles ...string) fiber.Handler
 			return fiber.NewError(fiber.StatusForbidden, "your account holds none of the required roles")
 		}
 
-		c.Locals(gatewayauth.ContextKey{}, identity)
+		attach(c, identity)
 
 		return c.Next()
 	}

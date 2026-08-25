@@ -581,3 +581,18 @@ func TestOAuth2ProxyOIDCProfile(t *testing.T) {
 		t.Fatalf("unexpected identity from profile preset: %#v", id)
 	}
 }
+
+func TestCookieValue(t *testing.T) {
+	header := "Session=abc; IdToken=eyJx.y.z; Other=1"
+	if got := cookieValue(header, "IdToken"); got != "eyJx.y.z" {
+		t.Fatalf("cookieValue = %q", got)
+	}
+
+	if got := cookieValue(header, "Missing"); got != "" {
+		t.Fatalf("absent cookie must be empty, got %q", got)
+	}
+
+	if got := cookieValue("", "IdToken"); got != "" {
+		t.Fatalf("empty header must be empty, got %q", got)
+	}
+}

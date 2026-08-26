@@ -514,6 +514,16 @@ spec:
         - x-auth-request-user
         - x-auth-request-email
         - x-auth-request-groups
+{{- if $e.passAuthorizationHeader }}
+        # passAuthorizationHeader's other half: the proxy SETS the standard
+        # Authorization header (set_authorization_header above), but in
+        # ext_authz mode Envoy copies only the LISTED auth-response headers
+        # onto the backend request — without this line the header is dropped
+        # at the gateway and the knob is dead for every consumer
+        # (url-shortener /api/me answered anonymous behind a proxy that was
+        # demonstrably setting the header; 2026-08-27).
+        - authorization
+{{- end }}
 {{- if $route.authenticatedOnly }}
   # authenticatedOnly: ext_authz (oauth2-proxy) is the whole gate — any org
   # user who completed the OIDC login passes, and the token is still forwarded

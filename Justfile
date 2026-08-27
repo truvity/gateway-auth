@@ -69,3 +69,7 @@ ts:
 
 # Everything CI runs.
 check: build test lint chart-lint ts
+
+# Run Go vulnerability check
+vuln:
+    govulncheck ./...

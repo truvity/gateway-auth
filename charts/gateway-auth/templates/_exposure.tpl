@@ -36,6 +36,16 @@ cookie_domains = [{{ range $i, $d := $cookieDomains }}{{ if $i }}, {{ end }}"{{ 
 whitelist_domains = [{{ range $i, $d := $cookieDomains }}{{ if $i }}, {{ end }}"{{ $d }}"{{ end }}]
 cookie_secure = true
 cookie_samesite = "lax"
+# Session lifetime ALIGNED UNDER the access token's (Zitadel default 12h,
+# minted at the same login that starts this session). The proxy performs no
+# token refresh (no offline_access scope, no cookie_refresh), so a session
+# outliving its token strands the user on Envoy's raw "Jwt is expired" 401
+# until the cookie dies — days, at oauth2-proxy's 168h default (observed on
+# roster.kernel, 2026-08-27). With the session expiring FIRST, the next
+# request 302s through the provider instead: silent when the Zitadel SSO
+# session is still alive, a login prompt when not. The 1h margin keeps the
+# boundary race on the session side.
+cookie_expire = "11h"
 # Per-request CSRF cookie, keyed to the OAuth state (INF-562). A page load
 # fires several unauthenticated requests at once; with one shared CSRF
 # cookie the last writer's PKCE code_verifier clobbers the others and the

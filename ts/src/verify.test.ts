@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SignJWT, createLocalJWKSet, exportJWK, generateKeyPair, type JWK, type KeyLike } from "jose";
+import { SignJWT, createLocalJWKSet, exportJWK, generateKeyPair, type JWK, type KeyInput } from "jose";
 
 import type { Headers } from "./identity.js";
 import { InvalidTokenError, NoCredentialError } from "./identity.js";
@@ -24,7 +24,7 @@ async function keys() {
 }
 
 async function signToken(
-  privateKey: KeyLike | Uint8Array,
+  privateKey: KeyInput,
   claims: Record<string, unknown>,
   opts: { issuer?: string; audience?: string } = {},
 ): Promise<string> {

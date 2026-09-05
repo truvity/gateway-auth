@@ -7,7 +7,7 @@
 // that keyset.go implements by hand in Go.
 
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import type { JWK, JWTVerifyGetKey, JWTVerifyOptions, KeyLike } from "jose";
+import type { JWTVerifyGetKey, JWTVerifyOptions, KeyInput } from "jose";
 
 import {
   type Authenticator,
@@ -27,8 +27,15 @@ import { UserinfoFetcher } from "./userinfo.js";
  * KeyResolver is anything jose's jwtVerify accepts as its key argument: a remote
  * JWKS getter (the default), a local JWKS getter, or a bare public key. The last
  * two are the testability seam — a test injects a key without any HTTP.
+ *
+ * This is jose's OWN union rather than a restatement of it. It used to spell the
+ * members out as `KeyLike | Uint8Array | JWK | JWTVerifyGetKey`, and jose v6
+ * removed KeyLike, which broke the build. KeyInput is exactly
+ * `CryptoKey | KeyObject | JWK | Uint8Array` and is what jwtVerify's own
+ * signature takes, so this now moves with the library instead of drifting from
+ * it.
  */
-export type KeyResolver = KeyLike | Uint8Array | JWK | JWTVerifyGetKey;
+export type KeyResolver = KeyInput | JWTVerifyGetKey;
 
 /** CreateVerifierOptions configures a verifying Authenticator. */
 export interface CreateVerifierOptions {

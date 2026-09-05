@@ -620,12 +620,12 @@ spec:
 {{- else }}
   # Authorization (INF-421): "authenticated" is never sufficient — any org
   # user passes ext_authz above. The jwt provider re-validates the access
-  # token against Zitadel's JWKS, and the rules require a group in the
+  # token against the issuer's JWKS, and the rules require a group in the
   # allow-list. defaultAction Deny: a fresh user with zero grants gets 403,
   # not the app.
   jwt:
     providers:
-      - name: {{ default "zitadel" $e.identity.mode }}
+      - name: {{ include "gateway-auth.jwtProviderName" $root }}
         issuer: "{{ $issuer }}"
         remoteJWKS:
           {{- /* Zitadel serves its keys at /oauth/v2/keys; nothing else does.
@@ -646,7 +646,7 @@ spec:
         action: Allow
         principal:
           jwt:
-            provider: zitadel
+            provider: {{ include "gateway-auth.jwtProviderName" $root }}
             claims:
               - name: groups
                 valueType: StringArray

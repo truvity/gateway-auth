@@ -17,7 +17,7 @@ import (
 // identity provider, because oauth2-proxy cannot unless that provider
 // implements RP-Initiated Logout.
 //
-// So the user-visible behaviour is the provider's, not ours:
+// So the user-visible behavior is the provider's, not ours:
 //
 //   - with an end_session_endpoint in its discovery document, the provider
 //     can be sent a redirect that ends its session too, and sign-out works
@@ -28,7 +28,7 @@ import (
 //     authorize, so the session that survives is the UPSTREAM provider's.
 //
 // Check the provider's discovery document before putting this behind a
-// button labelled "log out", or it will appear to do nothing.
+// button labeled "log out", or it will appear to do nothing.
 func SignOutURL(proxyPrefix, redirectTo string) string {
 	if proxyPrefix == "" {
 		proxyPrefix = "/oauth2"

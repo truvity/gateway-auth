@@ -85,7 +85,7 @@ cookie_csrf_expire = "5m"
      Entra) does not, and omits the claim entirely when the list is empty.
 
      Requesting it unconditionally would be the simpler code and the wrong
-     behaviour: `groups` on a large directory can inflate the token past
+     behavior: `groups` on a large directory can inflate the token past
      the 4KB cookie chunk that oauth2-proxy splits sessions on, for
      installs that never authorize on groups at all. So it is added only
      when an allow-list is actually configured.

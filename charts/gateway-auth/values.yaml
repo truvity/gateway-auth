@@ -62,6 +62,21 @@ exposure:
   #                            own product Project CR, the url-shortener /
   #                            eudi shape).
   identity:
+    # mode selects WHERE the client credential comes from.
+    #   zitadel (default) - this chart renders an OIDCApp and the Zitadel
+    #                       operator mints the client Secret. Unchanged.
+    #   static            - no OIDCApp is rendered; the credential is read
+    #                       from identity.existingSecret, which must carry the
+    #                       keys client-id and client-secret. Use this to front
+    #                       a provider that has no operator and no CR to
+    #                       reconcile (dex, Keycloak, a hand-registered client).
+    mode: zitadel
+    # Required when mode is static. Keys: client-id, client-secret.
+    existingSecret: ""
+    # Overrides the JWKS URI on the SecurityPolicy. Zitadel serves its keys at
+    # {issuer}/oauth/v2/keys and nothing else does, so a non-Zitadel provider
+    # must set this (dex serves {issuer}/keys).
+    jwksUri: ""
     project:
       cluster: true
       ref: ""
@@ -92,6 +107,21 @@ exposure:
     - name: app
       path: /
       protected: true
+
+  # Session sharing. Left empty, each install generates its own cookie secret
+  # and runs its own Valkey - independent sessions, one login per host. Set
+  # BOTH of these plus a common exposure.cookieDomains to make several
+  # installs one sign-on: oauth2-proxy derives the cookie key from the
+  # secret, so proxies sharing it read each other's cookies, and a shared
+  # store means they see each other's sessions.
+  cookie:
+    # Secret carrying OAUTH2_PROXY_COOKIE_SECRET. Empty -> generated per
+    # install by the ESO Password generator.
+    existingSecret: ""
+  sessionStore:
+    # redis:// URL of a shared store. Empty -> this install gets its own
+    # ValkeyCluster, as before.
+    url: ""
 
   # jwt groups allow-list values for protected routes (defaultAction Deny).
   authorization:

@@ -77,7 +77,11 @@ set_authorization_header = false
 # Session state in this install's own Valkey (cluster-aware even at one shard).
 session_store_type = "redis"
 redis_use_cluster = true
+{{- if ($e.sessionStore | default dict).url }}
+redis_connection_url = "{{ $e.sessionStore.url }}"
+{{- else }}
 redis_cluster_connection_urls = ["redis://{{ include "gateway-auth.valkeyHost" . }}.{{ .Release.Namespace }}.svc.{{ include "gateway-auth.dnsDomain" . }}:6379"]
+{{- end }}
 {{- end -}}
 
 
@@ -118,6 +122,13 @@ redis_cluster_connection_urls = ["redis://{{ include "gateway-auth.valkeyHost" .
 # groups authorization on top. Recipe source: gitops stacks/gateways/
 # templates/{oauth2-proxy,retina-gateway}.yaml.
 # ==========================================================================
+{{- /* The OIDCApp is Zitadel-specific: it asks that operator to create an
+   app and mint the client Secret. In "static" identity mode there is no
+   operator to ask -- the caller registered the client with whatever
+   provider they run and handed us the Secret -- so this whole document
+   is skipped. Nothing downstream changes; only the SOURCE of the
+   credential does. */ -}}
+{{- if ne (default "zitadel" $e.identity.mode) "static" }}
 ---
 # OIDC client for THIS install's oauth2-proxy, minted by the Zitadel
 # operator. Token shape matches hubble (retina-gateway.yaml): the gateway's
@@ -164,6 +175,11 @@ spec:
     keys:
       clientId: client-id
       clientSecret: client-secret
+{{- end }}
+{{- /* Per-install session store. exposure.sessionStore.url points every
+   proxy at ONE Valkey instead, which is the other half of a shared
+   session: same cookie secret, same store, same cookie domain. */ -}}
+{{- if not (($e.sessionStore | default dict).url) }}
 ---
 # Session / ticket store — one ValkeyCluster PER install (the design's
 # per-install Valkey). The valkey.io operator (valkey.io/v1alpha1) owns
@@ -211,6 +227,11 @@ spec:
   {{- end }}
   exporter:
     enabled: {{ $e.valkey.exporter.enabled }}
+{{- /* The generated cookie secret is per-install. When several proxies
+   must share one session, exposure.cookie.existingSecret points them at
+   a common Secret instead and this generator is skipped. */ -}}
+{{- if not (($e.cookie | default dict).existingSecret) }}
+{{- end }}
 ---
 # Cookie secret — AES-256 for oauth2-proxy's session ticket, generated
 # IN-CLUSTER by the ESO Password generator. The value never exists in SSM
@@ -231,6 +252,8 @@ spec:
   symbolCharacters: ""
   noUpper: false
   allowRepeat: true
+{{- end }}
+{{- if not (($e.cookie | default dict).existingSecret) }}
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
@@ -255,6 +278,7 @@ spec:
         - regexp:
             source: "^password$"
             target: "OAUTH2_PROXY_COOKIE_SECRET"
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -548,10 +572,13 @@ spec:
   # not the app.
   jwt:
     providers:
-      - name: zitadel
+      - name: {{ default "zitadel" $e.identity.mode }}
         issuer: "{{ $issuer }}"
         remoteJWKS:
-          uri: "{{ $issuer }}/oauth/v2/keys"
+          {{- /* Zitadel serves its keys at /oauth/v2/keys; nothing else does.
+             exposure.identity.jwksUri overrides the whole URI so the chart can
+             front any provider (dex uses /keys, Keycloak a realm path). */}}
+          uri: "{{ $e.identity.jwksUri | default (printf "%s/oauth/v2/keys" $issuer) }}"
           # Explicit (matches the CRD default): the API server injects it,
           # and an undeclared default is a permanent ArgoCD OutOfSync.
           cacheDuration: "300s"

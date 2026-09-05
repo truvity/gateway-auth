@@ -54,7 +54,34 @@ cookie_expire = "11h"
 cookie_csrf_per_request = true
 cookie_csrf_expire = "5m"
 
-scope = "openid profile email"
+{{- /*
+     SCOPES. oauth2-proxy only receives a claim the provider was ASKED for,
+     and the jwt/groups authorization rule further down reads `groups` out
+     of the access token oauth2-proxy forwards. So a protected route with
+     an authorization.groups allow-list needs the groups scope requested
+     here, or the provider returns a token with no groups claim, the rule
+     matches nothing, and defaultAction Deny rejects every request from
+     every user -- a total outage that looks like a policy typo.
+
+     Zitadel hid this: it asserts role claims because the OIDCApp says so,
+     not because a scope was requested, so the allow-list worked without
+     the scope. A standards-compliant provider (dex, Keycloak, Auth0,
+     Entra) does not, and omits the claim entirely when the list is empty.
+
+     Requesting it unconditionally would be the simpler code and the wrong
+     behaviour: `groups` on a large directory can inflate the token past
+     the 4KB cookie chunk that oauth2-proxy splits sessions on, for
+     installs that never authorize on groups at all. So it is added only
+     when an allow-list is actually configured.
+*/ -}}
+{{- $scopes := $e.identity.scopes -}}
+{{- if not $scopes -}}
+{{- $scopes = "openid profile email" -}}
+{{- if $e.authorization.groups -}}
+{{- $scopes = printf "%s groups" $scopes -}}
+{{- end -}}
+{{- end }}
+scope = {{ $scopes | quote }}
 code_challenge_method = "S256"
 skip_provider_button = true
 

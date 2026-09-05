@@ -99,6 +99,10 @@
             "jwksUri": {
               "type": "string",
               "description": "Overrides the SecurityPolicy JWKS URI. Required for any non-Zitadel issuer."
+            },
+            "scopes": {
+              "type": "string",
+              "description": "Space-separated OAuth scopes oauth2-proxy requests. Empty means openid profile email, plus groups when authorization.groups is set."
             }
           }
         },

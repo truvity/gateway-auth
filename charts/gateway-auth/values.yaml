@@ -130,6 +130,47 @@ exposure:
     # ValkeyCluster, as before.
     url: ""
 
+  # Session lifetime and renewal.
+  #
+  # ON SIGNING OUT, and read this before building a logout button. The proxy
+  # serves <proxyPrefix>/sign_out (SignOutURL in this repo builds the link),
+  # and it clears THIS proxy's cookie and its stored session. It does not,
+  # and cannot, end the session at the identity provider.
+  #
+  # What the user experiences therefore depends entirely on the provider:
+  #
+  #   - a provider implementing RP-Initiated Logout (an end_session_endpoint
+  #     in its discovery document) can be sent a redirect that ends its
+  #     session too, and sign-out behaves the way people expect;
+  #   - a provider WITHOUT one leaves its own session, or its upstream
+  #     connector's, untouched. The next request 302s straight back through
+  #     it and the user is silently signed in again, having pressed a button
+  #     that appeared to do something. dex is in this category: it
+  #     advertises no end_session_endpoint and no front- or back-channel
+  #     logout, and it re-runs its connector on every authorize, so what
+  #     keeps the user signed in is the UPSTREAM provider's cookie.
+  #
+  # That is not a bug in this chart and no value here fixes it. Check the
+  # provider's discovery document before offering the button.
+  session:
+    # Cookie lifetime. The default sits under a 12h access token; see the
+    # long note in _exposure.tpl for why that matters when refresh is off.
+    expire: "11h"
+    # Renew the access token once the cookie is older than this. Empty ->
+    # no refresh, which is what every install did before this existed.
+    #
+    # MUST be shorter than expire, or the cookie dies before a refresh is
+    # ever attempted and the setting does nothing while looking correct.
+    # That one is on you: Helm cannot compare two duration strings, so it
+    # is documented rather than enforced.
+    #
+    # Setting it also adds offline_access to the requested scopes, without
+    # which the provider issues no refresh token and refresh cannot work.
+    # Combining it with an explicit identity.scopes that omits
+    # offline_access is refused at render time rather than left to fail
+    # silently at runtime.
+    refresh: ""
+
   # jwt groups allow-list values for protected routes (defaultAction Deny).
   authorization:
     groups: []

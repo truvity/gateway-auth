@@ -106,6 +106,20 @@
             }
           }
         },
+        "session": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "expire": {
+              "type": "string",
+              "description": "oauth2-proxy cookie lifetime (default 11h)."
+            },
+            "refresh": {
+              "type": "string",
+              "description": "Renew the access token when the cookie is older than this. Must be shorter than expire; adds offline_access to the requested scopes. Empty means no refresh."
+            }
+          }
+        },
         "routes": {
           "type": "array",
           "items": {

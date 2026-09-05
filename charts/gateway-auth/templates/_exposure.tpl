@@ -36,16 +36,32 @@ cookie_domains = [{{ range $i, $d := $cookieDomains }}{{ if $i }}, {{ end }}"{{ 
 whitelist_domains = [{{ range $i, $d := $cookieDomains }}{{ if $i }}, {{ end }}"{{ $d }}"{{ end }}]
 cookie_secure = true
 cookie_samesite = "lax"
-# Session lifetime ALIGNED UNDER the access token's (Zitadel default 12h,
-# minted at the same login that starts this session). The proxy performs no
-# token refresh (no offline_access scope, no cookie_refresh), so a session
-# outliving its token strands the user on Envoy's raw "Jwt is expired" 401
-# until the cookie dies — days, at oauth2-proxy's 168h default (observed on
-# roster.kernel, 2026-08-27). With the session expiring FIRST, the next
-# request 302s through the provider instead: silent when the Zitadel SSO
-# session is still alive, a login prompt when not. The 1h margin keeps the
-# boundary race on the session side.
-cookie_expire = "11h"
+# Session lifetime. The default ALIGNS UNDER the access token's (Zitadel
+# default 12h, minted at the same login that starts this session), because
+# without refresh a session outliving its token strands the user on Envoy's
+# raw "Jwt is expired" 401 until the cookie dies — days, at oauth2-proxy's
+# 168h default (observed on roster.kernel, 2026-08-27). With the session
+# expiring FIRST, the next request 302s through the provider instead:
+# silent when the provider's own session is still alive, a login prompt
+# when not. The 1h margin keeps the boundary race on the session side.
+#
+# session.refresh lifts that ceiling. oauth2-proxy then renews the access
+# token once the cookie is older than the refresh interval, so expire no
+# longer has to hide under the token lifetime. Two conditions, and BOTH
+# fail silently rather than loudly:
+#
+#   - refresh MUST be shorter than expire. Set the other way round the
+#     cookie dies before a refresh is ever attempted, and the config looks
+#     correct while behaving exactly as if refresh were unset.
+#   - the provider must actually issue a refresh token, which needs the
+#     offline_access scope. The scope block above adds it whenever
+#     session.refresh is set. Setting identity.scopes by hand overrides
+#     that, so the two together are REFUSED at render time unless the
+#     explicit list includes offline_access itself.
+cookie_expire = {{ ($e.session | default dict).expire | default "11h" | quote }}
+{{- with ($e.session | default dict).refresh }}
+cookie_refresh = {{ . | quote }}
+{{- end }}
 # Per-request CSRF cookie, keyed to the OAuth state (INF-562). A page load
 # fires several unauthenticated requests at once; with one shared CSRF
 # cookie the last writer's PKCE code_verifier clobbers the others and the
@@ -80,6 +96,16 @@ cookie_csrf_expire = "5m"
 {{- if $e.authorization.groups -}}
 {{- $scopes = printf "%s groups" $scopes -}}
 {{- end -}}
+{{- if ($e.session | default dict).refresh -}}
+{{- $scopes = printf "%s offline_access" $scopes -}}
+{{- end -}}
+{{- else if and ($e.session | default dict).refresh (not (contains "offline_access" $scopes)) -}}
+{{- /* An explicit scope list overrides the offline_access this chart would
+   have added, and without it the provider issues no refresh token: the
+   install renders cleanly, cookie_refresh is present, and oauth2-proxy
+   simply never refreshes. Fail instead -- there is no reading of these
+   two values together that the author could have meant. */ -}}
+{{- fail "exposure.identity.scopes is set alongside exposure.session.refresh but omits offline_access; refresh cannot work without a refresh token, so add offline_access to the scope list or unset one of the two" -}}
 {{- end }}
 scope = {{ $scopes | quote }}
 code_challenge_method = "S256"

@@ -59,17 +59,41 @@ eudi-infra precedents).
 {{- end -}}
 
 {{/*
-oidcSecretName is the operator-minted client-id/secret Secret.
+oidcSecretName is the Secret holding client-id/client-secret.
+
+In the default "zitadel" identity mode it is the one the operator
+mints from the OIDCApp this chart renders. In "static" mode the chart
+renders no OIDCApp and the caller supplies the Secret, which is what
+lets the chart sit in front of a provider that has no operator and no
+CR to reconcile. Everything downstream is unchanged: the proxy already
+read a Secret and does not care who created it.
 */}}
 {{- define "gateway-auth.oidcSecretName" -}}
+{{- $e := .Values.exposure -}}
+{{- if eq (default "zitadel" $e.identity.mode) "static" -}}
+{{- required "exposure.identity.existingSecret is required when identity.mode is static" $e.identity.existingSecret -}}
+{{- else -}}
 {{- printf "%s-oidc-client" (include "gateway-auth.name" .) -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
-cookieName is the ESO Password + ExternalSecret cookie secret name.
+cookieName is the Secret holding OAUTH2_PROXY_COOKIE_SECRET.
+
+By default the chart generates one per install (ESO Password +
+ExternalSecret). Set exposure.cookie.existingSecret to point several
+installs at ONE secret: oauth2-proxy derives the cookie key from it,
+so proxies sharing the value can read each other's cookies. That,
+plus a shared session store and a common cookie domain, is what turns
+a set of independent proxies into one sign-on.
 */}}
 {{- define "gateway-auth.cookieName" -}}
+{{- $c := .Values.exposure.cookie | default dict -}}
+{{- if $c.existingSecret -}}
+{{- $c.existingSecret -}}
+{{- else -}}
 {{- printf "%s-cookie" (include "gateway-auth.name" .) -}}
+{{- end -}}
 {{- end -}}
 
 {{/*

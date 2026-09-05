@@ -4,32 +4,62 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "global": { "type": "object" },
-    "clusterName": { "type": "string" },
-    "commonAnnotations": { "type": "object" },
-    "podAnnotations": { "type": "object" },
+    "global": {
+      "type": "object"
+    },
+    "clusterName": {
+      "type": "string"
+    },
+    "commonAnnotations": {
+      "type": "object"
+    },
+    "podAnnotations": {
+      "type": "object"
+    },
     "exposure": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "enabled": { "type": "boolean" },
-        "name": { "type": "string" },
-        "hostname": { "type": "string" },
-        "issuer": { "type": "string" },
-        "proxyPrefix": { "type": "string" },
-        "dnsDomain": { "type": "string" },
+        "enabled": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        },
+        "proxyPrefix": {
+          "type": "string"
+        },
+        "dnsDomain": {
+          "type": "string"
+        },
         "cookieDomains": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
-        "passAuthorizationHeader": { "type": "boolean" },
+        "passAuthorizationHeader": {
+          "type": "boolean"
+        },
         "gateway": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "name": { "type": "string" },
-            "namespace": { "type": "string" },
-            "sectionName": { "type": "string" }
+            "name": {
+              "type": "string"
+            },
+            "namespace": {
+              "type": "string"
+            },
+            "sectionName": {
+              "type": "string"
+            }
           }
         },
         "identity": {
@@ -40,12 +70,36 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "cluster": { "type": "boolean" },
-                "ref": { "type": "string" }
+                "cluster": {
+                  "type": "boolean"
+                },
+                "ref": {
+                  "type": "string"
+                }
               }
             },
-            "projectId": { "type": "string" },
-            "appName": { "type": "string" }
+            "projectId": {
+              "type": "string"
+            },
+            "appName": {
+              "type": "string"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "zitadel",
+                "static"
+              ],
+              "description": "Where the OIDC client credential comes from. zitadel renders an OIDCApp; static reads identity.existingSecret."
+            },
+            "existingSecret": {
+              "type": "string",
+              "description": "Secret with keys client-id and client-secret. Required when mode is static."
+            },
+            "jwksUri": {
+              "type": "string",
+              "description": "Overrides the SecurityPolicy JWKS URI. Required for any non-Zitadel issuer."
+            }
           }
         },
         "routes": {
@@ -53,20 +107,42 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name"],
+            "required": [
+              "name"
+            ],
             "properties": {
-              "name": { "type": "string" },
-              "path": { "type": "string" },
-              "pathType": { "type": "string", "enum": ["PathPrefix", "Exact"] },
-              "protected": { "type": "boolean" },
-              "authenticatedOnly": { "type": "boolean" },
-              "targetRouteName": { "type": "string" },
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "pathType": {
+                "type": "string",
+                "enum": [
+                  "PathPrefix",
+                  "Exact"
+                ]
+              },
+              "protected": {
+                "type": "boolean"
+              },
+              "authenticatedOnly": {
+                "type": "boolean"
+              },
+              "targetRouteName": {
+                "type": "string"
+              },
               "backend": {
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
-                  "name": { "type": "string" },
-                  "port": { "type": "integer" }
+                  "name": {
+                    "type": "string"
+                  },
+                  "port": {
+                    "type": "integer"
+                  }
                 }
               }
             }
@@ -78,7 +154,9 @@
           "properties": {
             "groups": {
               "type": "array",
-              "items": { "type": "string" }
+              "items": {
+                "type": "string"
+              }
             }
           }
         },
@@ -86,8 +164,12 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "name": { "type": "string" },
-            "port": { "type": "integer" }
+            "name": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            }
           }
         },
         "proxy": {
@@ -98,42 +180,81 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "repository": { "type": "string" },
-                "tag": { "type": "string" }
+                "repository": {
+                  "type": "string"
+                },
+                "tag": {
+                  "type": "string"
+                }
               }
             },
-            "replicas": { "type": "integer", "minimum": 1 },
-            "resources": { "type": "object" },
-            "nodeSelector": { "type": "object" },
-            "tolerations": { "type": "array" },
-            "topologySpreadConstraints": { "type": "array" }
+            "replicas": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "resources": {
+              "type": "object"
+            },
+            "nodeSelector": {
+              "type": "object"
+            },
+            "tolerations": {
+              "type": "array"
+            },
+            "topologySpreadConstraints": {
+              "type": "array"
+            }
           }
         },
         "valkey": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "shards": { "type": "integer", "minimum": 1 },
-            "replicas": { "type": "integer", "minimum": 0 },
-            "image": { "type": "string" },
+            "shards": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "replicas": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "image": {
+              "type": "string"
+            },
             "persistence": {
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "enabled": { "type": "boolean" },
-                "size": { "type": "string" },
-                "storageClassName": { "type": "string" },
-                "reclaimPolicy": { "type": "string" }
+                "enabled": {
+                  "type": "boolean"
+                },
+                "size": {
+                  "type": "string"
+                },
+                "storageClassName": {
+                  "type": "string"
+                },
+                "reclaimPolicy": {
+                  "type": "string"
+                }
               }
             },
-            "resources": { "type": "object" },
-            "config": { "type": "object" },
-            "users": { "type": "array" },
+            "resources": {
+              "type": "object"
+            },
+            "config": {
+              "type": "object"
+            },
+            "users": {
+              "type": "array"
+            },
             "exporter": {
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "enabled": { "type": "boolean" }
+                "enabled": {
+                  "type": "boolean"
+                }
               }
             }
           }
@@ -142,10 +263,38 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "enabled": { "type": "boolean" },
-            "port": { "type": "integer" },
-            "fleetNamespace": { "type": "string" },
-            "valkeyOperatorNamespace": { "type": "string" }
+            "enabled": {
+              "type": "boolean"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "fleetNamespace": {
+              "type": "string"
+            },
+            "valkeyOperatorNamespace": {
+              "type": "string"
+            }
+          }
+        },
+        "cookie": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": {
+              "type": "string",
+              "description": "Shared OAUTH2_PROXY_COOKIE_SECRET. Empty generates one per install."
+            }
+          }
+        },
+        "sessionStore": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "redis:// URL of a shared session store. Empty renders a per-install ValkeyCluster."
+            }
           }
         }
       }

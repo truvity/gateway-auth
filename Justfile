@@ -44,6 +44,14 @@ chart-lint:
         --set exposure.proxy.image.tag=v7.6.0 \
         --set 'exposure.authorization.groups={cluster-x:cluster:admin}' \
         --set exposure.networkPolicy.enabled=true >/dev/null
+    # The jwt provider BLOCK and the authorization RULE that references it must
+    # name the same provider. They diverged once -- the block was named from
+    # identity.mode while the rule hardcoded "zitadel" -- so every static-mode
+    # install with a groups allow-list answered "RBAC: access denied" for every
+    # user. Rendering alone cannot catch it: the output is well-formed either
+    # way, so this asserts the two names are equal in both modes.
+    bash -eu -c 'for m in static zitadel; do o=$(helm template gateway-auth charts/gateway-auth --set exposure.enabled=true --set exposure.hostname=app.example.com --set exposure.issuer=https://sso.example.com --set exposure.gateway.name=app --set exposure.gateway.namespace=gw --set exposure.gateway.sectionName=https --set exposure.identity.mode=$m --set exposure.identity.existingSecret=idp --set exposure.identity.projectId=00000000 --set exposure.backend.name=app --set exposure.backend.port=80 --set exposure.routes[0].name=app --set exposure.routes[0].protected=true --set "exposure.authorization.groups={org:admins}"); b=$(printf "%s" "$o" | grep -A1 "providers:" | grep -- "- name:" | awk "{print \$3}"); r=$(printf "%s" "$o" | grep "provider:" | awk "{print \$2}"); if [ "$b" != "$r" ]; then echo "jwt provider mismatch mode=$m: block=$b rule=$r" >&2; exit 1; fi; echo "jwt provider names agree in mode=$m ($b)"; done'
+
     # Attach mode (business app): SecurityPolicy binds to an EXISTING ring3
     # HTTPRoute (targetRouteName), product projectRef, no chart-owned app route.
     helm template gateway-auth charts/gateway-auth \

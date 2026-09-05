@@ -129,3 +129,22 @@ from cross-selecting each other's pods.
 app.kubernetes.io/name: oauth2-proxy
 app.kubernetes.io/instance: {{ include "gateway-auth.name" . }}
 {{- end -}}
+
+{{/*
+jwtProviderName is the name of the SecurityPolicy's jwt provider.
+
+It exists so the provider BLOCK and the authorization RULE that references
+it cannot drift apart. They did: the block was named from identity.mode
+while the rule hardcoded "zitadel", so any install with
+identity.mode: static and an authorization.groups list rendered a rule
+pointing at a provider that did not exist. Envoy matched no principal and
+answered "RBAC: access denied" for every user, which reads as a broken
+allow-list rather than a dangling reference.
+
+The value is arbitrary as long as it is used in both places; keeping the
+identity.mode derivation means zitadel-mode installs render exactly as
+before.
+*/}}
+{{- define "gateway-auth.jwtProviderName" -}}
+{{- default "zitadel" .Values.exposure.identity.mode -}}
+{{- end -}}

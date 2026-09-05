@@ -77,6 +77,13 @@ exposure:
     # {issuer}/oauth/v2/keys and nothing else does, so a non-Zitadel provider
     # must set this (dex serves {issuer}/keys).
     jwksUri: ""
+    # Overrides the OAuth scopes oauth2-proxy requests, as a space-separated
+    # string. Empty -> "openid profile email", plus "groups" when
+    # authorization.groups is non-empty, because the jwt authorization rule
+    # reads that claim out of the access token and a provider only sends a
+    # claim it was asked for. Set this only for a provider that names the
+    # claim differently or requires an extra scope of its own.
+    scopes: ""
     project:
       cluster: true
       ref: ""
